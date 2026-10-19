@@ -1,0 +1,70 @@
+{
+  "publication_mode": "official_download_links_only_no_binary_mirror",
+  "release_tag": "v1.26.2",
+  "official_release_url": "https://github.com/nikkinikki-org/OpenWrt-nikki/releases/tag/v1.26.2",
+  "target_environment": {
+    "device_family": "N1",
+    "firmware": "iStoreOS 25.12.5",
+    "target": "amlogic/meson",
+    "package_arch": "aarch64_cortex-a53",
+    "package_manager": "apk 3.0.5"
+  },
+  "official_archive": {
+    "filename": "nikki_aarch64_cortex-a53-openwrt-25.12.tar.gz",
+    "url": "https://github.com/nikkinikki-org/OpenWrt-nikki/releases/download/v1.26.2/nikki_aarch64_cortex-a53-openwrt-25.12.tar.gz",
+    "github_asset_id": 627660971,
+    "size_bytes": 37320919,
+    "sha256": "6ee657c194fa9010f16a983d13776527f5f113294ac3db1351958b941437405c",
+    "checksum_source": "GitHub official release asset digest; independently downloaded bytes matched"
+  },
+  "packages": [
+    {
+      "filename": "luci-app-nikki-1.26.2-r1.apk",
+      "version": "1.26.2-r1",
+      "package_arch": "noarch",
+      "size_bytes": 10986,
+      "sha256": "e5950a129822ced1c5687241437f23d4e593712f43f79c5df6076b946333f425",
+      "official_archive_url": "https://github.com/nikkinikki-org/OpenWrt-nikki/releases/download/v1.26.2/nikki_aarch64_cortex-a53-openwrt-25.12.tar.gz",
+      "archive_member": "./luci-app-nikki-1.26.2-r1.apk"
+    },
+    {
+      "filename": "luci-i18n-nikki-zh-cn-26.283.34061~31339d5.apk",
+      "version": "26.283.34061~31339d5",
+      "package_arch": "noarch",
+      "size_bytes": 5009,
+      "sha256": "e4fd4259218a31150cba257bc1c4ef92157de7cbc31609537bdae160876a1455",
+      "official_archive_url": "https://github.com/nikkinikki-org/OpenWrt-nikki/releases/download/v1.26.2/nikki_aarch64_cortex-a53-openwrt-25.12.tar.gz",
+      "archive_member": "./luci-i18n-nikki-zh-cn-26.283.34061~31339d5.apk"
+    },
+    {
+      "filename": "mihomo-meta-1.19.32.apk",
+      "version": "1.19.32",
+      "package_arch": "aarch64_cortex-a53",
+      "size_bytes": 20581964,
+      "sha256": "0b162e0f65d2c4fcdf73027fbb3cd018e188761acda116b16af142b34004cf4e",
+      "official_archive_url": "https://github.com/nikkinikki-org/OpenWrt-nikki/releases/download/v1.26.2/nikki_aarch64_cortex-a53-openwrt-25.12.tar.gz",
+      "archive_member": "./mihomo-meta-1.19.32.apk"
+    },
+    {
+      "filename": "nikki-2026.10.10-r1.apk",
+      "version": "2026.10.10-r1",
+      "package_arch": "aarch64_cortex-a53",
+      "size_bytes": 53305,
+      "sha256": "c32213a8864d2a3a7a2043ff49934f055a3dc6396f8661e9aa5c54ed5e9ac3bc",
+      "official_archive_url": "https://github.com/nikkinikki-org/OpenWrt-nikki/releases/download/v1.26.2/nikki_aarch64_cortex-a53-openwrt-25.12.tar.gz",
+      "archive_member": "./nikki-2026.10.10-r1.apk"
+    }
+  ],
+  "verification": {
+    "fresh_official_archive_download_sha256_matched": true,
+    "package_bytes_matched_previous_review": true,
+    "package_checksums_source": "SHA-256 computed from exact members of verified official archive; upstream asset metadata covers archive, not individual APKs",
+    "official_public_key_signature_verified": false,
+    "router_install_or_runtime_tested": false
+  },
+  "limitations": [
+    "Only documentation is stored here; APKs and source archives are not mirrored.",
+    "Not an offline dependency bundle. Matching firmware feeds and kernel ABI are required.",
+    "Linking upstream does not resolve or certify upstream third-party licensing."
+  ]
+}
