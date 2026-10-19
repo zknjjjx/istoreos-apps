@@ -362,7 +362,7 @@ return view.extend({
 		var ipv = E('select', { 'class': 'cbi-input-select' }, [
 			['auto', '自动（推荐）'], ['4', '仅 IPv4'], ['6', '仅 IPv6']
 		].map(function(o) { return E('option', { 'value': o[0], 'selected': (st.ip_version || 'auto') == o[0] ? '' : null }, o[1]); }));
-		var px = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'value': st.proxy || '', 'placeholder': '例如 https://9797.cc.cd/ ，留空表示直连 GitHub' });
+		var px = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'value': st.proxy || '', 'placeholder': '例如 https://proxy.example.com/ ，留空表示直连 GitHub' });
 
 		var save = L.bind(function() {
 			wait('保存中…');
@@ -375,7 +375,7 @@ return view.extend({
 				E('li', [E('b', '开机自动连接：'), '路由器重启后，自动重新连接所有「已连接」状态的隧道。关掉后重启路由器需要手动点「连接」。']),
 				E('li', [E('b', '连接协议：'), 'cloudflared 到 Cloudflare 的传输方式。QUIC 走 UDP 443，国内运营商经常限速或丢包，导致隧道频繁断开，所以默认 HTTP/2（TCP 443）。海外或网络很好时可以试 QUIC。']),
 				E('li', [E('b', 'IP 版本：'), '连接 Cloudflare 边缘节点用 IPv4 还是 IPv6。没有 IPv6 或 IPv6 不稳定时选「仅 IPv4」；只有 IPv6 出口时选「仅 IPv6」。']),
-				E('li', [E('b', '下载代理：'), '只在首页「检查更新」下载 cloudflared 时使用，格式是在 GitHub 链接前加的前缀（如 https://9797.cc.cd/），对隧道本身没有影响。'])
+				E('li', [E('b', '下载代理：'), '只在首页「检查更新」下载 cloudflared 时使用，格式是在 GitHub 链接前加的前缀（如 https://proxy.example.com/），对隧道本身没有影响。'])
 			])]),
 			field(E('span', [auto, ' 开机自动连接']), '', '路由器重启后自动连接上次已连接的隧道'),
 			field('连接协议', proto, '改了以后正在运行的隧道会自动重启生效'),
