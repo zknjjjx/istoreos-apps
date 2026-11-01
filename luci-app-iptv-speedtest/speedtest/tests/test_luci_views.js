@@ -52,7 +52,7 @@ function rows(root) { return root.querySelectorAll('.cbi-section-table-row'); }
     click(root, '删除', 1); click(root, '保存直播源');
     const saved = JSON.parse(calls.at(-1)[1]);
     assert.deepEqual(Object.keys(saved).sort(), ['proxy', 'sources']);
-    assert.deepEqual(saved.sources, [{enabled: false, name: 'edited', url: 'http://edited'}]);
+    assert.deepEqual(saved.sources, [{enabled: false, name: 'edited', url: 'http://edited', priority: false}]);
     console.log('PASS sources: add/delete preserve edits, save is page-local');
 }
 {

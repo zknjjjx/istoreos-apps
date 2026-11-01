@@ -733,7 +733,9 @@ def run_once():
     state.update(status="拉取源", progress=0, total=0, cur_stats={})
     black = [k for k in re.split(r"[,，\s]+", cfg["blacklist"]) if k]
     entries, seen, stats = [], set(), {}
-    for s in cfg["sources"]:
+    # 优先源先拉取：同一地址出现在多个源里时归到优先源；其余按列表顺序
+    prio_rank = {s["url"]: i for i, s in enumerate(x for x in cfg["sources"] if x.get("priority") and x.get("enabled", True))}
+    for s in sorted(cfg["sources"], key=lambda x: 0 if x["url"] in prio_rank else 1):
         if stop_evt.is_set():
             break
         if not s.get("enabled", True):
@@ -825,6 +827,7 @@ def run_once():
             failed.append({"group": g, "name": name, "url": url, "src": src, "reason": why})
             continue
         r["weak"] = lvl == "weak"
+        r["src"] = src
         k = norm(name, cfg["merge_names"])
         if k not in best:
             best[k] = []
@@ -836,8 +839,13 @@ def run_once():
     rule_order = [r["group"] for r in cfg["group_rules"]] if cfg["group_mode"] == "rules" else []
     groups = {g: [] for g in rule_order}
     for k in order:
-        # 流畅的优先，其次按码率；只剩勉强的源时也保留，频道不至于消失
-        picks = sorted(best[k], key=lambda x: (x[5]["weak"], -x[0]))[:max(1, int(cfg["keep"]))]
+        # 优先源里达标（流畅）的排第一，多个优先源按列表顺序；其余流畅的优先，再按码率；
+        # 只剩勉强的源时也保留，频道不至于消失
+        def rank(x):
+            r = x[5]
+            pr = prio_rank.get(r["src"]) if not r["weak"] else None
+            return (0, pr, 0, -x[0]) if pr is not None else (1, 0, r["weak"], -x[0])
+        picks = sorted(best[k], key=rank)[:max(1, int(cfg["keep"]))]
         name = picks[0][1]
         groups.setdefault(pick_group(name, picks[0][2], cfg), []).extend(picks)
 
@@ -853,7 +861,7 @@ def run_once():
             txt.append(f"{name},{url}")
             report.append({"group": g, "name": name, "url": url, "kbps": round(br),
                            "rt": round(r["rt"], 2) if r.get("rt") else None, "ttfb": r.get("ttfb"),
-                           "weak": r["weak"], "res": r["res"]})
+                           "weak": r["weak"], "res": r["res"], "prio": r["src"] in prio_rank})
         txt.append("")
     for fn, body in (("best.m3u", "\n".join(m3u) + "\n"), ("best.txt", "\n".join(txt)),
                      ("report.json", json.dumps(report, ensure_ascii=False)),
@@ -953,7 +961,7 @@ def clean_cfg(new):
             c[k] = bool(new[k])
     if "sources" in new:
         c["sources"] = [{"url": s["url"].strip(), "name": str(s.get("name", "")).strip(),
-                         "enabled": bool(s.get("enabled", True))}
+                         "enabled": bool(s.get("enabled", True)), "priority": bool(s.get("priority", False))}
                         for s in new["sources"] if str(s.get("url", "")).strip().startswith(("http", "file"))]
     if "group_rules" in new:
         c["group_rules"] = [{"group": r["group"].strip(), "keywords": str(r.get("keywords", "")).strip()}
@@ -1120,7 +1128,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px 4px;b
   <div class=row><input type=text id=nu placeholder="m3u / txt 订阅地址"></div>
   <div class=row><input type=text id=nn placeholder="备注（可选）"><button onclick=addSrc()>添加</button></div></div>
  <div class=card><h3>源列表</h3><div class="list" id=srcs></div>
-  <div class=muted>取消勾选 = 暂停使用；保存后下次测速生效。</div></div>
+  <div class=muted>左边勾选 = 启用，取消 = 暂停使用。↑↓ 调整顺序：排在前面的源先拉取，同一地址出现在多个源里时归前面的源。<br>
+  勾「优先」：该源里的频道只要测速达标（流畅，且满足最低码率/分辨率），就固定排在该频道的第一条；不达标才按码率让给其他源。多个优先源时，排在前面的更优先。<br>
+  改完记得点保存，下次测速生效。</div></div>
 </section>
 
 <section id=groups hidden>
@@ -1180,9 +1190,12 @@ const F=['start_time','interval_hours','keep','workers','timeout','smooth_ratio'
 async function load(){cfg=await api('/api/config');F.forEach(k=>$(k).value=cfg[k]);B.forEach(k=>$(k).checked=cfg[k]);drawSrc();drawRules()}
 function collect(){F.forEach(k=>cfg[k]=$(k).value);B.forEach(k=>cfg[k]=$(k).checked)}
 async function save(){collect();const r=await api('/api/config',cfg);if(r.ok){cfg=r.config;toast('已保存，下次测速生效');drawSrc();drawRules()}else toast(r.error)}
-function drawSrc(){$('srcs').innerHTML=cfg.sources.map((s,i)=>`<div class=item><input type=checkbox ${s.enabled?'checked':''} onchange="cfg.sources[${i}].enabled=this.checked">
+function mvSrc(i,d){const j=i+d;if(j<0||j>=cfg.sources.length)return;const a=cfg.sources;[a[i],a[j]]=[a[j],a[i]];drawSrc()}
+function drawSrc(){const n=cfg.sources.length;$('srcs').innerHTML=cfg.sources.map((s,i)=>`<div class=item${s.priority?' style="background:#fffbe6"':''}><span class=muted style="width:18px;text-align:right">${i+1}</span><input type=checkbox title=启用 ${s.enabled?'checked':''} onchange="cfg.sources[${i}].enabled=this.checked">
  <div style="flex:1;min-width:0"><input type=text value="${esc(s.name)}" placeholder=备注 onchange="cfg.sources[${i}].name=this.value" style="width:100%;margin-bottom:4px">
  <input type=text value="${esc(s.url)}" onchange="cfg.sources[${i}].url=this.value" style="width:100%"></div>
+ <label style="white-space:nowrap;font-size:13px" title="达标时该源的频道排第一"><input type=checkbox ${s.priority?'checked':''} onchange="cfg.sources[${i}].priority=this.checked;drawSrc()">优先</label>
+ <span style="display:flex;flex-direction:column;gap:2px"><button class=gray style="padding:0 8px" ${i?'':'disabled'} onclick="mvSrc(${i},-1)">↑</button><button class=gray style="padding:0 8px" ${i<n-1?'':'disabled'} onclick="mvSrc(${i},1)">↓</button></span>
  <button class=gray onclick="testSrc(${i},this)">测试</button>
  <button class=red onclick="if(confirm('删除这个源？')){cfg.sources.splice(${i},1);drawSrc()}">删</button></div>`).join('')||'<div class=muted>还没有源</div>'}
 async function testSrc(i,b){b.disabled=true;b.textContent='…';const r=await api('/api/testsource',{url:cfg.sources[i].url});b.disabled=false;b.textContent='测试';
@@ -1219,7 +1232,7 @@ function drawResult(){const f=$('rf').value.trim().toUpperCase();
  $('rc').textContent=`成功 ${report.length} 条，失败 ${failed.length} 条`;
  if(view=='ok'){const rows=report.filter(r=>!f||r.name.toUpperCase().includes(f)||r.url.toUpperCase().includes(f));
   $('rt').innerHTML='<tr><th>分组</th><th>频道</th><th>码率</th><th>分辨率</th><th>实时倍率</th><th>首包</th></tr>'+rows.slice(0,500).map(r=>
-  `<tr><td>${esc(r.group)}</td><td><a href="${esc(r.url)}" target=_blank>${esc(r.name)}</a></td><td>${(r.kbps/1000).toFixed(1)} Mbps</td><td>${esc(r.res)||'-'}</td><td${r.weak?' class=bad title=勉强':''}>${r.rt==null?'-':r.rt+(r.weak?' 勉强':'')}</td><td>${r.ttfb==null?'-':r.ttfb+'s'}</td></tr>`).join('');
+  `<tr><td>${esc(r.group)}</td><td><a href="${esc(r.url)}" target=_blank>${esc(r.name)}</a>${r.prio?' <span title=来自优先源 style="color:#d48806">★</span>':''}</td><td>${(r.kbps/1000).toFixed(1)} Mbps</td><td>${esc(r.res)||'-'}</td><td${r.weak?' class=bad title=勉强':''}>${r.rt==null?'-':r.rt+(r.weak?' 勉强':'')}</td><td>${r.ttfb==null?'-':r.ttfb+'s'}</td></tr>`).join('');
   $('rmore').textContent=rows.length>500?`只显示前 500 条，共 ${rows.length} 条，可搜索缩小范围`:'';return}
  const rows=failRows();
  $('rt').innerHTML='<tr><th>频道</th><th>原因</th><th>链接</th></tr>'+rows.slice(0,500).map(x=>

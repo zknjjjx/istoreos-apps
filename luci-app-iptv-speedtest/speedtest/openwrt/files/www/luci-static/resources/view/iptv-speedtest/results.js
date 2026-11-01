@@ -62,7 +62,7 @@ return view.extend({
                 var rows = (page.items || []).map(function (item) {
                     if (selectedTab === 'failed')
                         return [item.group || '', item.name || '', item.reason || '', item.url || item.src || ''];
-                    return [item.group || '', item.name || '', item.kbps == null ? '—' : (item.kbps / 1000).toFixed(1) + ' Mbps',
+                    return [item.group || '', (item.name || '') + (item.prio ? ' ★' : ''), item.kbps == null ? '—' : (item.kbps / 1000).toFixed(1) + ' Mbps',
                         item.res || '—', item.rt == null ? '—' : String(item.rt) + (item.weak ? '（勉强）' : ''),
                         item.ttfb == null ? '—' : item.ttfb + ' s', item.url || ''];
                 });
