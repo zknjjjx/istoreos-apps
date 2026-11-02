@@ -1,6 +1,6 @@
 # luci-app-iptv-speedtest — IPTV 测速优选
 
-本插件已整合到 [zknjjjx/istoreos-apps](https://github.com/zknjjjx/istoreos-apps)，当前原生版本 **1.0.0-r5**。保留原项目的 Docker 部署、公共订阅列表、生成脚本及原生 LuCI 插件。
+本插件已整合到 [zknjjjx/istoreos-apps](https://github.com/zknjjjx/istoreos-apps)，当前原生版本 **1.0.0-r6**。保留原项目的 Docker 部署、公共订阅列表、生成脚本及原生 LuCI 插件。
 
 - **iStoreOS / OpenWrt 原生安装**：[安装、升级、构建与回滚](speedtest/openwrt/README.md)，无需 Docker；入口为“服务 → IPTV 测速优选”。
 - **Docker 部署**：[完整使用说明](speedtest/README.md)，原方式继续保留。
