@@ -1,0 +1,40 @@
+name: luci-app-instakeeper
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号，如 1.0.0-r1'
+        required: true
+        default: '1.0.0-r1'
+  push:
+    tags: ['instakeeper-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 版本号
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -n "$V" ] || V="${GITHUB_REF_NAME#instakeeper-v}"
+          echo "V=$V" >> $GITHUB_ENV
+      - name: 打包
+        run: |
+          cd luci-app-instakeeper
+          sudo sh build/build-apk.sh "$V"
+          ls -la dist
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: instakeeper-v${{ env.V }}
+          name: luci-app-instakeeper ${{ env.V }}
+          body: |
+            InstaBox 保活 LuCI 插件：多账号、主动重置、空闲轻触、冷却后自动拉起、夜间冷却时段。
+            适用于新版 iStoreOS / OpenWrt 25.12+（apk 包管理器），纯脚本包，所有架构通用。
+            安装：iStore → 手动安装 → 上传 apk；或 `apk add --allow-untrusted xxx.apk`
+          files: luci-app-instakeeper/dist/*.apk

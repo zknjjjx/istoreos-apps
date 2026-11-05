@@ -1,0 +1,7 @@
+{
+	"luci-app-instakeeper": {
+		"description": "InstaBox keeper",
+		"read": { "file": { "/usr/libexec/instakeeper status": [ "exec" ], "/usr/libexec/instakeeper log *": [ "exec" ] }, "uci": [ "instakeeper" ] },
+		"write": { "file": { "/usr/libexec/instakeeper run": [ "exec" ], "/etc/init.d/instakeeper restart": [ "exec" ] }, "uci": [ "instakeeper" ] }
+	}
+}

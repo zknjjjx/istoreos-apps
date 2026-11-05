@@ -1,0 +1,98 @@
+#!/bin/sh
+# InstaBox 保活守护（多账号）：冷却结束即拉起、可选定时主动重置、按间隔轻触、每日冷却时段
+API=https://api.instabox.sh/v1
+ST=/tmp/instakeeper.json
+LOG=/tmp/instakeeper.log
+. /lib/functions.sh
+config_load instakeeper
+config_get KEY main api_key ''
+config_get RESET main reset_minutes 450
+config_get POKE main poke_idle 1
+config_get EXCL main exclude ''
+loadcfg(){ config_load instakeeper; config_get KEY main api_key ''; config_get RESET main reset_minutes 450
+	config_get POKE main poke_idle 1; config_get PM main poke_minutes 5; config_get EXCL main exclude ''
+	config_get NE main night_enabled 0; config_get NF main night_from '02:00'; config_get NT main night_to '04:00'; }
+hm(){ h=${1%%:*}; m=${1##*:}; echo $(( ${h#0}0/10*60 + ${m#0}0/10 )); }
+in_night(){ [ "$NE" = 1 ] || return 1; c=$(hm "$(date +%H:%M)"); f=$(hm "$NF"); t=$(hm "$NT"); [ $f = $t ] && return 1
+	if [ $f -lt $t ]; then [ $c -ge $f ] && [ $c -lt $t ]; else [ $c -ge $f ] || [ $c -lt $t ]; fi; }
+
+log(){ echo "$(date '+%m-%d %H:%M:%S') $*" >> $LOG; n=$(wc -l < $LOG); [ "$n" -gt 400 ] && { tail -n 300 $LOG > $LOG.t; mv $LOG.t $LOG; }; }
+api(){ # method path [body]
+	curl -s -m 40 -X "$1" "$API$2" -H "X-API-Key: $KEY" -H "Content-Type: application/json" \
+		-H "Idempotency-Key: ik-$(date +%s)-$$-$RANDOM" ${3:+-d "$3"}
+}
+ts(){ [ -z "$1" ] || [ "$1" = null ] && { echo 0; return; }
+	t=$(echo "$1" | sed 's/\.[0-9]*//; s/Z$//; s/T/ /'); date -u -d "$t" +%s 2>/dev/null || echo 0; }
+mstate(){ api GET "/machines/$1" | jsonfilter -e '@.state' 2>/dev/null; }
+# 拉起直到确认：每 30 秒重试，最多 10 次（约 5 分钟）；冷却中则交给下一轮
+resume_until(){ local id=$1 n=0 e='' st='' k
+	while [ $n -lt 10 ]; do n=$((n+1))
+		[ "$st" = resuming ] || e=$(api POST "/machines/$id/resume" '{}' | jsonfilter -e '@.error.code' 2>/dev/null)
+		[ "$e" = machine_cooldown ] && { RE="冷却中"; return 1; }
+		k=0; while [ $k -lt 10 ]; do sleep 3; st=$(mstate $id)
+			[ "$st" = running ] && { RE="ok${n:+（第 $n 次）}"; [ $n = 1 ] && RE=ok; return 0; }
+			k=$((k+1)); done
+		[ $n -lt 10 ] && sleep 30
+	done; RE="失败:${e:-仍为 $st}"; return 1; }
+
+ACCS=""
+acc_cb(){ local en n k x; config_get en "$1" enabled 1; [ "$en" = 1 ] || return 0
+	config_get n "$1" name "$1"; config_get k "$1" api_key ''; config_get x "$1" exclude ''
+	[ -n "$k" ] && ACCS="$ACCS$1 "; }
+acc_load(){ config_get ACC "$1" name "$1"; config_get KEY "$1" api_key ''; config_get EXCL "$1" exclude ''; }
+
+run_all(){
+	now=$(date +%s); out=""; err=""; night=0; in_night && night=1
+	ACCS=""; config_foreach acc_cb account
+	if [ -n "$ACCS" ]; then for a in $ACCS; do acc_load $a; run_acc; done
+	elif [ -n "$KEY" ]; then ACC=默认; run_acc
+	else err="未设置账号"; log "未设置账号 / API Key"; fi
+	echo "{\"checked\":$now,\"reset\":$RESET,\"night\":\"$([ "$NE" = 1 ] && echo "$NF-$NT")\",\"error\":\"$err\",\"machines\":[$out]}" > $ST
+}
+
+run_acc(){
+	R=$(api GET "/machines?limit=50")
+	echo "$R" | jsonfilter -e '@.machines[0].id' >/dev/null 2>&1 || { log "[$ACC] API 无响应或报错: $(echo "$R" | head -c 160)"; err="${err:+$err；}[$ACC] API 报错"; return 1; }
+	i=0
+	while :; do
+		id=$(echo "$R" | jsonfilter -e "@.machines[$i].id" 2>/dev/null); [ -n "$id" ] || break
+		name=$(echo "$R" | jsonfilter -e "@.machines[$i].name"); state=$(echo "$R" | jsonfilter -e "@.machines[$i].state")
+		run=$(ts "$(echo "$R" | jsonfilter -e "@.machines[$i].runStartedAt" 2>/dev/null)")
+		cool=$(ts "$(echo "$R" | jsonfilter -e "@.machines[$i].cooldownUntil" 2>/dev/null)")
+		op=$(echo "$R" | jsonfilter -e "@.machines[$i].operationId" 2>/dev/null)
+		i=$((i+1)); act="—"
+		case " $EXCL " in *" $name "*|*" $id "*) act="已排除"; state="$state";;
+		*)
+		if [ -n "$op" ]; then act="操作进行中"
+		elif [ "$state" = running ]; then
+			age=$(( (now-run)/60 ))
+			if [ $night = 1 ]; then
+				api POST "/machines/$id/suspend" '{}' >/dev/null; act="夜间停机"; log "[$ACC] $name 进入冷却时段 $NF-$NT，停机（已运行 ${age} 分钟）"
+			elif [ "$RESET" -gt 0 ] && [ "$run" -gt 0 ] && [ "$age" -ge "$RESET" ]; then
+				log "[$ACC] $name 已运行 ${age} 分钟，主动重置"; api POST "/machines/$id/suspend" '{}' >/dev/null
+				k=0; while [ $k -lt 20 ]; do [ "$(mstate $id)" = suspended ] && break; sleep 3; k=$((k+1)); done
+				resume_until $id && act="已重置" || act="重置后拉起$RE"; log "[$ACC] $name 拉起 $RE"
+			elif [ "$POKE" = 1 ]; then
+				lp=$(cat /tmp/ik-poke-$id 2>/dev/null || echo 0)
+				if [ $(( now - lp )) -ge $(( PM*60 - 30 )) ]; then api POST "/machines/$id/exec" '{"cmd":"true"}' >/dev/null; echo $now > /tmp/ik-poke-$id; act="轻触"; else act="运行中"; fi
+			fi
+		elif [ "$state" = suspended ] || [ "$state" = paused ]; then
+			if [ $night = 1 ]; then act="冷却时段，$NT 后拉起"
+			elif [ "$cool" -gt "$now" ]; then m=$(( (cool-now+59)/60 )); act="冷却中，${m} 分钟后拉起"
+				[ $m -gt 60 ] && [ "$(cat /tmp/ik-cool-$id 2>/dev/null)" != "$cool" ] && { echo $cool > /tmp/ik-cool-$id; log "⚠ [$ACC] $name 冷却长达 ${m} 分钟，疑似惩罚"; }
+			else resume_until $id; act="拉起 $RE"; log "[$ACC] $name 挂起中，拉起 $RE"; fi
+		fi;;
+		esac
+		[ "$run" -gt 0 ] && rs=$run || rs=0
+		out="$out${out:+,}{\"acc\":\"$ACC\",\"name\":\"$name\",\"state\":\"$state\",\"run\":$rs,\"cool\":$cool,\"act\":\"$act\"}"
+	done
+}
+
+case "$1" in
+	run) loadcfg; run_all ;;
+	status) [ -f $ST ] && cat $ST || echo '{"machines":[]}' ;;
+	log) [ -f $LOG ] && tail -n "${2:-60}" $LOG ;;
+	daemon) config_get IV main interval 300; log "守护启动，每 ${IV}s 检查"
+		while :; do ( loadcfg; run_all ); config_load instakeeper; config_get IV main interval 300; sleep "$IV"; done ;;
+	*) echo "用法: $0 run|status|log|daemon" ;;
+esac

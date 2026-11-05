@@ -1,0 +1,15 @@
+config main 'main'
+	option enabled '0'
+	option interval '300'
+	option reset_minutes '450'
+	option poke_idle '1'
+	option poke_minutes '5'
+	option night_enabled '0'
+	option night_from '02:00'
+	option night_to '04:00'
+
+# 每个 InstaBox 账号一段，可在 LuCI 页面里添加
+# config account
+#	option name 'me@example.com'
+#	option api_key 'ibk_xxx'
+#	option exclude ''

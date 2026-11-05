@@ -1,0 +1,8 @@
+{
+	"admin/services/instakeeper": {
+		"title": "InstaBox 保活",
+		"order": 63,
+		"action": { "type": "view", "path": "instakeeper" },
+		"depends": { "acl": [ "luci-app-instakeeper" ] }
+	}
+}
