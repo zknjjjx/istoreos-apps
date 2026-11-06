@@ -1,5 +1,5 @@
 Package: luci-app-instakeeper
-Version: 1.0.0-1
+Version: 1.1.0-1
 Depends: libc, luci-base, curl
 Source: https://github.com/zknjjjx/istoreos-apps
 SourceName: luci-app-instakeeper
@@ -8,4 +8,4 @@ Section: luci
 Maintainer: zknjjjx
 Architecture: all
 Installed-Size: 20
-Description: InstaBox 保活：多账号、到点主动重置、空闲轻触、冷却结束自动拉起、夜间冷却时段
+Description: InstaBox 保活：多账号、按平台上限自动重置、空闲轻触、冷却结束自动拉起、夜间冷却时段

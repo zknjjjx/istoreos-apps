@@ -12,16 +12,17 @@ var ZH = { running: '运行中', suspended: '已挂起', paused: '已挂起', re
 
 function hm(min) { var h = Math.floor(min / 60), m = min % 60; return h ? (h + ' 小时 ' + m + ' 分') : (m + ' 分'); }
 function statusTable(s) {
-	var now = Date.now() / 1000, off = (s.reset === 0), lim = off ? 480 : (s.reset || 450);
+	var now = Date.now() / 1000, bf = (s.before === undefined ? 15 : s.before), off = (bf === 0);
 	var groups = {}, order = [];
 	(s.machines || []).forEach(function(m) { var k = m.acc || '默认'; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(m); });
 	var card = function(m) {
 		var ex = (m.act === '已排除'), run = (m.state === 'running');
 		var used = m.run ? Math.floor((now - m.run) / 60) : 0;
+		var mx = m.max || 480, ml = (m.lim !== undefined) ? m.lim : (off ? 0 : mx - bf), moff = (ml === 0), mlim = moff ? mx : ml;
 		var color = ex ? '#9e9e9e' : (run ? '#2e7d32' : '#c62828');
 		var info = [];
 		if (m.run) info.push('已运行 ' + hm(used));
-		if (m.run && !ex) info.push(hm(Math.max(0, lim - used)) + (off ? '后被平台停' : '后重置'));
+		if (m.run && !ex) info.push(hm(Math.max(0, mlim - used)) + (moff ? '后被平台停' : '后重置') + '（平台上限 ' + hm(mx) + '）');
 		return E('div', { 'style': 'padding:10px 12px;border-bottom:1px solid rgba(128,128,128,.2);' + (ex ? 'opacity:.55' : '') }, [
 			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;gap:8px' }, [
 				E('b', { 'style': 'white-space:nowrap' }, m.name),
@@ -39,7 +40,7 @@ function statusTable(s) {
 		].concat(groups[k].map(card)));
 	});
 	return E('div', {}, [
-		E('p', { 'style': 'font-size:90%' }, s.error ? E('b', { 'style': 'color:#c62828' }, s.error) : ('上次检查 ' + fmt(s.checked) + (s.night ? ' · 每日冷却 ' + s.night : '') + (off ? ' · 不主动重置' : ' · ' + lim + ' 分钟重置')))
+		E('p', { 'style': 'font-size:90%' }, s.error ? E('b', { 'style': 'color:#c62828' }, s.error) : ('上次检查 ' + fmt(s.checked) + (s.night ? ' · 每日停机 ' + s.night : '') + (off ? ' · 不主动重置' : ' · 停机前 ' + bf + ' 分钟重置')))
 	].concat(blocks));
 }
 function getJSON(a) { return fs.exec(BIN, a).then(function(r) { try { return JSON.parse(r.stdout); } catch (e) { return {}; } }); }
@@ -47,19 +48,19 @@ function getJSON(a) { return fs.exec(BIN, a).then(function(r) { try { return JSO
 return view.extend({
 	load: function() { return Promise.all([L.resolveDefault(getJSON(['status']), {}), L.resolveDefault(fs.exec(BIN, ['log', '40']), {})]); },
 	render: function(d) {
-		var m = new form.Map('instakeeper', 'InstaBox 保活', '自动拉起被挂起的 InstaBox 机器（冷却结束即拉）；可选：跑满设定时长主动“挂起→立刻拉起”重置 8 小时计时；按间隔轻触防 30 分钟空闲暂停；每天指定时段停机冷却（模拟正常使用，降低挂机判定风险）。');
+		var m = new form.Map('instakeeper', 'InstaBox 保活', '自动拉起被挂起的 InstaBox 机器（冷却结束即拉）；按每台机器的平台上限，停机前主动“挂起→立刻拉起”重置计时；按间隔轻触防空闲暂停；每天指定时段停机（模拟正常使用，降低挂机判定风险）。');
 		var s = m.section(form.NamedSection, 'main', 'main');
 		var o = s.option(form.Flag, 'enabled', '启用');
-		o = s.option(form.Value, 'reset_minutes', '运行多久后重置（分钟）', '0 = 不主动重置，被平台停机后等冷却结束再拉起；60~470 = 到时主动重置（平台上限 480）'); o.datatype = 'or(range(0,0),range(60,470))';
+		o = s.option(form.Value, 'reset_before', '停机前多少分钟重置', '自动读取每台机器的平台运行上限（如 8 小时、6 小时、2 小时），提前这么多分钟“挂起→立刻拉起”重置计时；0 = 不主动重置，被平台停机后等冷却结束再拉起'); o.datatype = 'range(0,60)'; o.placeholder = '15'; o.default = '15';
 		o = s.option(form.Value, 'interval', '检查间隔（秒）', '建议 300'); o.datatype = 'range(60,1200)';
-		o = s.option(form.Flag, 'poke_idle', '防空闲暂停', '给运行中的机器发一条空命令');
-		o = s.option(form.Value, 'poke_minutes', '轻触间隔（分钟）', '平台空闲 30 分钟暂停，建议 5~20；实际按检查间隔取整'); o.datatype = 'range(1,29)'; o.placeholder = '5'; o.depends('poke_idle', '1');
-		o = s.option(form.Flag, 'night_enabled', '每日冷却时段', '时段内运行中的机器会被停机，时段结束再拉起');
+		o = s.option(form.Flag, 'poke_idle', '轻触防空闲', '给运行中的机器发一条空命令，防平台空闲暂停');
+		o = s.option(form.Value, 'poke_minutes', '轻触间隔（分钟）', '平台空闲 30 分钟暂停，建议 5~20'); o.datatype = 'range(1,29)'; o.placeholder = '5'; o.depends('poke_idle', '1');
+		o = s.option(form.Flag, 'night_enabled', '每日停机时段', '时段内所有机器停机，时段结束再拉起');
 		var tv = function(id, v) { return /^([01]?\d|2[0-3]):[0-5]\d$/.test(v) ? true : '请输入 HH:MM，例如 02:00'; };
-		o = s.option(form.Value, 'night_from', '冷却开始', '24 小时制，可跨午夜（如 23:30 到 01:30）'); o.placeholder = '02:00'; o.validate = tv; o.depends('night_enabled', '1');
-		o = s.option(form.Value, 'night_to', '冷却结束'); o.placeholder = '04:00'; o.validate = tv; o.depends('night_enabled', '1');
+		o = s.option(form.Value, 'night_from', '停机开始', '24 小时制，可跨午夜（如 23:30 到 01:30）'); o.placeholder = '02:00'; o.validate = tv; o.depends('night_enabled', '1');
+		o = s.option(form.Value, 'night_to', '停机结束'); o.placeholder = '04:00'; o.validate = tv; o.depends('night_enabled', '1');
 
-		var a = m.section(form.GridSection, 'account', '账号', '每个 InstaBox 账号一行；上面的时间设置对所有账号生效。API Key 在 instabox.sh 控制台 API keys 里新建（ibk_ 开头）。');
+		var a = m.section(form.GridSection, 'account', '账号', '每个 InstaBox 账号一行；上面的设置对所有账号、所有机器自动生效。API Key 在 instabox.sh 控制台 API keys 里新建（ibk_ 开头）。');
 		a.addremove = true; a.anonymous = true; a.sortable = true; a.nodescriptions = true;
 		o = a.option(form.Flag, 'enabled', '启用'); o.default = '1'; o.editable = true;
 		o = a.option(form.Value, 'name', '名称'); o.rmempty = false;
