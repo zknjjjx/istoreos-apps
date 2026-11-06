@@ -1,7 +1,7 @@
 config main 'main'
 	option enabled '0'
 	option interval '300'
-	option reset_before '15'
+	option reset_before '3'
 	option poke_idle '1'
 	option poke_minutes '5'
 	option night_enabled '0'

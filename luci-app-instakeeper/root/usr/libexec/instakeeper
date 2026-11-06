@@ -6,10 +6,10 @@ LOG=/tmp/instakeeper.log
 . /lib/functions.sh
 config_load instakeeper
 config_get KEY main api_key ''
-config_get BEFORE main reset_before 15
+config_get BEFORE main reset_before 3
 config_get POKE main poke_idle 1
 config_get EXCL main exclude ''
-loadcfg(){ config_load instakeeper; config_get KEY main api_key ''; config_get BEFORE main reset_before 15
+loadcfg(){ config_load instakeeper; config_get KEY main api_key ''; config_get BEFORE main reset_before 3
 	config_get POKE main poke_idle 1; config_get PM main poke_minutes 5; config_get EXCL main exclude ''
 	config_get NE main night_enabled 0; config_get NF main night_from '02:00'; config_get NT main night_to '04:00'; }
 hm(){ h=${1%%:*}; m=${1##*:}; echo $(( ${h#0}0/10*60 + ${m#0}0/10 )); }
@@ -42,12 +42,13 @@ acc_cb(){ local en n k x; config_get en "$1" enabled 1; [ "$en" = 1 ] || return 
 acc_load(){ config_get ACC "$1" name "$1"; config_get KEY "$1" api_key ''; config_get EXCL "$1" exclude ''; }
 
 run_all(){
-	now=$(date +%s); out=""; err=""; night=0; in_night && night=1
+	now=$(date +%s); out=""; err=""; night=0; NEXT=0; in_night && night=1
 	ACCS=""; config_foreach acc_cb account
 	if [ -n "$ACCS" ]; then for a in $ACCS; do acc_load $a; run_acc; done
 	elif [ -n "$KEY" ]; then ACC=默认; run_acc
 	else err="未设置账号"; log "未设置账号 / API Key"; fi
 	echo "{\"checked\":$now,\"before\":$BEFORE,\"night\":\"$([ "$NE" = 1 ] && echo "$NF-$NT")\",\"error\":\"$err\",\"machines\":[$out]}" > $ST
+	echo $NEXT > /tmp/ik-next
 }
 
 run_acc(){
@@ -61,10 +62,11 @@ run_acc(){
 		cool=$(ts "$(echo "$R" | jsonfilter -e "@.machines[$i].cooldownUntil" 2>/dev/null)")
 		op=$(echo "$R" | jsonfilter -e "@.machines[$i].operationId" 2>/dev/null)
 		mx=$(echo "$R" | jsonfilter -e "@.machines[$i].maxRunMinutes" 2>/dev/null); case "$mx" in ''|*[!0-9]*) mx=0;; esac
-				# 停机前 BEFORE 分钟自动重置（按每台机器的平台上限）；0 = 不主动重置
-		case "$BEFORE" in ''|*[!0-9]*) BEFORE=15;; esac
+		# 到期前 BEFORE 分钟重置。平台在到期前 5 分钟按活跃度决定是否延长，所以必须小于 5，等它审完再动；0 = 不主动重置
+		case "$BEFORE" in ''|*[!0-9]*) BEFORE=3;; esac; [ "$BEFORE" -gt 4 ] && BEFORE=4
 		[ "$mx" -gt 0 ] || mx=480
 		if [ "$BEFORE" -gt 0 ]; then lim=$((mx-BEFORE)); [ "$lim" -lt 5 ] && lim=5; else lim=0; fi
+		[ "$state" = running ] && [ "$lim" -gt 0 ] && [ "$run" -gt 0 ] && { due=$((run+lim*60)); [ $due -gt $now ] && { [ "$NEXT" = 0 ] || [ $due -lt "$NEXT" ]; } && NEXT=$due; }
 		i=$((i+1)); act="—"
 		case " $EXCL " in *" $name "*|*" $id "*) act="已排除"; state="$state";;
 		*)
@@ -73,7 +75,7 @@ run_acc(){
 			age=$(( (now-run)/60 ))
 			if [ $night = 1 ]; then
 				api POST "/machines/$id/suspend" '{}' >/dev/null; act="夜间停机"; log "[$ACC] $name 进入冷却时段 $NF-$NT，停机（已运行 ${age} 分钟）"
-			elif [ "$lim" -gt 0 ] && [ "$run" -gt 0 ] && [ "$age" -ge "$lim" ]; then
+			elif [ "$lim" -gt 0 ] && [ "$run" -gt 0 ] && [ $((now-run)) -ge $((lim*60)) ]; then
 				log "[$ACC] $name 已运行 ${age} 分钟，主动重置"; api POST "/machines/$id/suspend" '{}' >/dev/null
 				k=0; while [ $k -lt 20 ]; do [ "$(mstate $id)" = suspended ] && break; sleep 3; k=$((k+1)); done
 				resume_until $id && act="已重置" || act="重置后拉起$RE"; log "[$ACC] $name 拉起 $RE"
@@ -99,6 +101,10 @@ case "$1" in
 	log) [ -f $LOG ] && tail -n "${2:-60}" $LOG ;;
 	daemon) config_get IV main interval 300; log "守护启动，每 ${IV}s 检查"
 		while :; do ( loadcfg; run_all ); config_load instakeeper; config_get IV main interval 300; config_get POKE main poke_idle 1; config_get PM main poke_minutes 5
-			case "$PM" in ""|*[!0-9]*) PM=5;; esac; [ "$POKE" = 1 ] && [ $((PM*60)) -lt "$IV" ] && IV=$((PM*60)); sleep "$IV"; done ;;
+			case "$PM" in ""|*[!0-9]*) PM=5;; esac; [ "$POKE" = 1 ] && [ $((PM*60)) -lt "$IV" ] && IV=$((PM*60))
+			# 有机器快到重置点时，准点醒来（平台审核后再判断）
+			nx=$(cat /tmp/ik-next 2>/dev/null); case "$nx" in ''|*[!0-9]*) nx=0;; esac
+			if [ "$nx" -gt 0 ]; then w=$(( nx - $(date +%s) + 5 )); [ $w -lt 20 ] && w=20; [ $w -lt "$IV" ] && IV=$w; fi
+			sleep "$IV"; done ;;
 	*) echo "用法: $0 run|status|log|daemon" ;;
 esac

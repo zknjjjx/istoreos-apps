@@ -1,8 +1,9 @@
 #!/bin/sh
 [ -n "$IPKG_INSTROOT" ] && exit 0
 chmod +x /usr/libexec/instakeeper /etc/init.d/instakeeper
-# 1.0 -> 1.1：reset_minutes 改为 reset_before（停机前多少分钟重置）
-if [ -z "$(uci -q get instakeeper.main.reset_before)" ]; then uci -q set instakeeper.main.reset_before=15; uci -q delete instakeeper.main.reset_minutes; uci -q commit instakeeper; fi
+# 旧版迁移：reset_minutes 改为 reset_before；平台到期前 5 分钟审核延长，重置须在其后（1~4 分钟）
+rb=$(uci -q get instakeeper.main.reset_before)
+if [ -z "$rb" ] || [ "$rb" -gt 4 ] 2>/dev/null; then uci -q set instakeeper.main.reset_before=3; uci -q delete instakeeper.main.reset_minutes; uci -q commit instakeeper; fi
 rm -rf /tmp/luci-indexcache* /tmp/luci-modulecache 2>/dev/null
 /etc/init.d/rpcd reload 2>/dev/null
 /etc/init.d/instakeeper enable 2>/dev/null

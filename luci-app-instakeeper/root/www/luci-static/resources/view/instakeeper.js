@@ -12,7 +12,7 @@ var ZH = { running: '运行中', suspended: '已挂起', paused: '已挂起', re
 
 function hm(min) { var h = Math.floor(min / 60), m = min % 60; return h ? (h + ' 小时 ' + m + ' 分') : (m + ' 分'); }
 function statusTable(s) {
-	var now = Date.now() / 1000, bf = (s.before === undefined ? 15 : s.before), off = (bf === 0);
+	var now = Date.now() / 1000, bf = (s.before === undefined ? 3 : s.before), off = (bf === 0);
 	var groups = {}, order = [];
 	(s.machines || []).forEach(function(m) { var k = m.acc || '默认'; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(m); });
 	var card = function(m) {
@@ -51,7 +51,7 @@ return view.extend({
 		var m = new form.Map('instakeeper', 'InstaBox 保活', '自动拉起被挂起的 InstaBox 机器（冷却结束即拉）；按每台机器的平台上限，停机前主动“挂起→立刻拉起”重置计时；按间隔轻触防空闲暂停；每天指定时段停机（模拟正常使用，降低挂机判定风险）。');
 		var s = m.section(form.NamedSection, 'main', 'main');
 		var o = s.option(form.Flag, 'enabled', '启用');
-		o = s.option(form.Value, 'reset_before', '停机前多少分钟重置', '自动读取每台机器的平台运行上限（如 8 小时、6 小时、2 小时），提前这么多分钟“挂起→立刻拉起”重置计时；0 = 不主动重置，被平台停机后等冷却结束再拉起'); o.datatype = 'range(0,60)'; o.placeholder = '15'; o.default = '15';
+		o = s.option(form.Value, 'reset_before', '到期前多少分钟重置', '平台给免费机器动态时长：每次启动 2 小时，到期前 5 分钟按最近半小时是否在干活决定是否延长，最多 8 小时。插件自动读取每台机器当前到期时间，等平台审完、在到期前这么多分钟“挂起→立刻拉起”。只能填 1~4（默认 3），0 = 不主动重置'); o.datatype = 'range(0,4)'; o.placeholder = '3'; o.default = '3';
 		o = s.option(form.Value, 'interval', '检查间隔（秒）', '建议 300'); o.datatype = 'range(60,1200)';
 		o = s.option(form.Flag, 'poke_idle', '轻触防空闲', '给运行中的机器发一条空命令，防平台空闲暂停');
 		o = s.option(form.Value, 'poke_minutes', '轻触间隔（分钟）', '平台空闲 30 分钟暂停，建议 5~20'); o.datatype = 'range(1,29)'; o.placeholder = '5'; o.depends('poke_idle', '1');
