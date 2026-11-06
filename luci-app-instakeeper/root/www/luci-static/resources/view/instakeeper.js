@@ -21,8 +21,11 @@ function statusTable(s) {
 		var mx = m.max || 480, ml = (m.lim !== undefined) ? m.lim : (off ? 0 : mx - bf), moff = (ml === 0), mlim = moff ? mx : ml;
 		var color = ex ? '#9e9e9e' : (run ? '#2e7d32' : '#c62828');
 		var info = [];
-		if (m.run) info.push('已运行 ' + hm(used));
-		if (m.run && !ex) info.push(hm(Math.max(0, mlim - used)) + (moff ? '后被平台停' : '后重置') + '（平台上限 ' + hm(mx) + '）');
+		if (m.run) info.push(E('span', {}, '已运行 ' + hm(used)));
+		if (m.run && !ex) {
+			var at = new Date((m.run + mlim * 60) * 1000);
+			info.push(E('span', {}, [E('b', { 'style': 'color:' + (moff ? '#c62828' : '#1565c0') }, hm(Math.max(0, mlim - used)) + (moff ? '后被平台停' : '后重置') + '（' + p2(at.getHours()) + ':' + p2(at.getMinutes()) + '）'), ' · 上限 ' + hm(mx)]));
+		}
 		return E('div', { 'style': 'padding:10px 12px;border-bottom:1px solid rgba(128,128,128,.2);' + (ex ? 'opacity:.55' : '') }, [
 			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;gap:8px' }, [
 				E('b', { 'style': 'white-space:nowrap' }, m.name),
@@ -31,7 +34,7 @@ function statusTable(s) {
 					m.act && m.act !== '—' ? E('span', { 'style': 'margin-left:8px;color:#888' }, m.act) : ''
 				])
 			]),
-			info.length ? E('div', { 'style': 'margin-top:4px;font-size:85%;color:#888' }, info.join(' · ')) : ''
+			info.length ? E('div', { 'style': 'margin-top:6px;font-size:100%;line-height:1.6;opacity:.9;display:flex;flex-wrap:wrap;column-gap:14px' }, info) : ''
 		]);
 	};
 	var blocks = order.map(function(k) {

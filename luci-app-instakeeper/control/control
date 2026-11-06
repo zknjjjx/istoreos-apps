@@ -1,5 +1,5 @@
 Package: luci-app-instakeeper
-Version: 1.2.0-1
+Version: 1.2.1-1
 Depends: libc, luci-base, curl
 Source: https://github.com/zknjjjx/istoreos-apps
 SourceName: luci-app-instakeeper
