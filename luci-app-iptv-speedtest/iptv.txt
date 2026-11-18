@@ -1,5 +1,5 @@
 更新时间,#genre#
-2026-11-18 17:56 更新,http://38.75.136.137:98/gslb/dsdqbv/cctv1hd.m3u8?auth=test20251009
+2026-11-19 02:46 更新,http://38.75.136.137:98/gslb/dsdqbv/cctv1hd.m3u8?auth=test20251009
 
 央视频道,#genre#
 CCTV-1,http://38.75.136.137:98/gslb/dsdqbv/cctv1hd.m3u8?auth=test20251009
@@ -236,7 +236,7 @@ CCTV8,http://iptv.huuc.edu.cn/hls/cctv8hd.m3u8
 CCTV8,http://175.8.28.207:9999/tsfile/live/0008_1.m3u8
 CCTV8,http://t.061899.xyz/tl/tl.php?id=cctv8
 CCTV8,http://112.27.235.94:8000/hls/9/index.m3u8
-CCTV8,http://124.165.251.82:85/tsfile/live/0008_1.m3u8?key=txiptv&playlive=1&authid=0
+CCTV8,http://gmxw.7766.org:808/hls/96/index.m3u8
 CCTV9,http://148.135.93.213/live.php?id=CCTV9
 CCTV9,http://iptv.huuc.edu.cn/hls/cctv9hd.m3u8
 CCTV9,http://175.8.28.207:9999/tsfile/live/0009_1.m3u8
@@ -1007,8 +1007,7 @@ BRTV 北京卫视 [Not 24/7],http://ivi.bupt.edu.cn/hls/btv1.m3u8
 地方频道,#genre#
 广东民生,http://183.11.239.36:808/hls/18/index.m3u8
 浙江钱江,http://l.cztvcloud.com/channels/lantian/SXyuyao2/720p.m3u8
-浙江民生,http://ali-m-l.cztv.com/channels/lantian/channel06/1080p.m3u8
-嘉兴新闻综合,http://tvfile.jyrmt.cn:80/nmip-media/channellive/channel104452/playlist.m3u8
+浙江民生休闲,http://ali-vl.cztv.com/channels/lantian/channel006/360p.m3u8
 龙游生活娱乐,https://l.cztvcloud.com/channels/lantian/SXlongyou2/720p.m3u8
 龙游新闻综合,https://l.cztvcloud.com/channels/lantian/SXlongyou1/720p.m3u8
 衢江新闻综合,http://l.cztvcloud.com/channels/lantian/SXqujiang1/720p.m3u8?zzhed
@@ -1026,10 +1025,12 @@ BRTV 北京卫视 [Not 24/7],http://ivi.bupt.edu.cn/hls/btv1.m3u8
 甘肃经济,https://hls.gstv.com.cn/49048r/10iv1j.m3u8
 山东新闻,http://ls.qingting.fm/live/60180.m3u8
 山东生活,http://ls.qingting.fm/live/60260.m3u8
+太谷新闻综合,https://p2.vzan.com/slowlive/596867413819827251/live.m3u8?zbid=1725814272&amp;amp;tpid=1516989100&amp;amp;type=0
 安徽导视,http://dspdhls.appcoo.com:8888/live/dspd/index.m3u8
 宁夏经济,https://hls.ningxiahuangheyun.com/live/nxjj1M.m3u8
 黑龙江文体,https://idclive.hljtv.com:4430/live/hljwy_hd.m3u8
 黑龙江都市,https://idclive.hljtv.com:4430/live/dushi_hd.m3u8
+哈尔滨娱乐,https://stream.hrbtv.net/ylpd/sd/live.m3u8
 黄河电视台,http://liveflash.sxrtv.com/live/huanghe.m3u8?sub_m3u8=true&edge_slice=true
 山西经济与科技,http://liveflash.sxrtv.com/live/sxfinance.m3u8?sub_m3u8=true&edge_slice=true
 山西影视,http://liveflash.sxrtv.com/live/sxfilm.m3u8?sub_m3u8=true&edge_slice=true
@@ -1049,6 +1050,7 @@ BRTV 北京卫视 [Not 24/7],http://ivi.bupt.edu.cn/hls/btv1.m3u8
 兵团五师双河新闻综合,http://liveout.btzx.com.cn/62ds9e/4nxdih.m3u8?fbl=
 兵团八师石河子新闻综合,http://124.88.144.73:1935/live/xwzh/playlist.m3u8?zxinjd
 双辽综合,http://stream3.jlntv.cn:80/aac_slgb/playlist.m3u8
+古县综合,https://l2fpdktp.live.sxmty.com/live/hls/e4c3b363cc4549788e2d983f403e07db/d99ce1eb686e41b9afc888110bd95aa7.m3u8?zshanxd
 句容党建,http://jrlive.jrntv.com/live/_definst_/dangjians/playlist.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD]
 句容影院,http://jrlive.jrntv.com/live/_definst_/yingshis/chunklist_w1994429382.m3u8?zjiangsd
 句容生活,http://jrlive.jrntv.com/live/_definst_/shenghuos/playlist.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD]
@@ -1354,6 +1356,22 @@ CN卡通,https://stream1.freetv.fun/cnqia-tong-3.ctv
 
 儿童频道,#genre#
 浙江少儿,http://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8
+
+电影频道,#genre#
+浙江教科影视,http://ali-vl.cztv.com/channels/lantian/channel004/360p.m3u8
+CHC电影,http://183.237.95.108:9901/tsfile/live/1008_1.m3u8?key=txiptv&playlive=0&authid=0
+电影八点档,http://live.metshop.top/huya/880261?cdn=alicdn
+电影刘德华,http://live.metshop.top/huya/11342424?cdn=alicdn
+电影功夫片,http://live.metshop.top/huya/11352941?cdn=alicdn
+电影动作电影,http://live.metshop.top/huya/11602077?cdn=alicdn
+电影喜剧专场,http://live.metshop.top/huya/11602044?cdn=alicdn
+电影梁家辉,http://live.metshop.top/huya/11342429?cdn=alicdn
+电影犯罪片,http://live.metshop.top/huya/11352974?cdn=alicdn
+电影蜘蛛侠,http://live.metshop.top/huya/21059599?cdn=alicdn
+电影谍战,http://live.metshop.top/huya/21059585?cdn=alicdn
+电影谍战片,http://live.metshop.top/huya/21059587?cdn=alicdn
+电影贺岁,http://live.metshop.top/huya/11601971?cdn=alicdn
+电影高分动作,http://live.metshop.top/huya/11352884?cdn=alicdn
 
 ☘️北京频道,#genre#
 北京卡酷少儿,https://zby.130519.xyz/PLTV/11/224/3221226019/index.m3u8
@@ -3353,21 +3371,6 @@ Tastemade,https://i.mjh.nz/SamsungTVPlus/CABD1200002T9.m3u8
 MovieSphere,https://i.mjh.nz/SamsungTVPlus/USBD17000117B.m3u8
 The Lego Channel,https://i.mjh.nz/SamsungTVPlus/GBBC4300005AL.m3u8
 NextUp Live Comedy,https://i.mjh.nz/SamsungTVPlus/GBBD1100012JB.m3u8
-
-电影频道,#genre#
-CHC电影,http://183.237.95.108:9901/tsfile/live/1008_1.m3u8?key=txiptv&playlive=0&authid=0
-电影丧尸片,http://live.metshop.top/huya/21059578?cdn=alicdn
-电影八点档,http://live.metshop.top/huya/880261?cdn=alicdn
-电影刘德华,http://live.metshop.top/huya/11342424?cdn=alicdn
-电影功夫片,http://live.metshop.top/huya/11352941?cdn=alicdn
-电影动作电影,http://live.metshop.top/huya/11602077?cdn=alicdn
-电影喜剧专场,http://live.metshop.top/huya/11602044?cdn=alicdn
-电影嫣然影厅,http://live.metshop.top/huya/11601977?cdn=alicdn
-电影梁家辉,http://live.metshop.top/huya/11342429?cdn=alicdn
-电影犯罪片,http://live.metshop.top/huya/11352974?cdn=alicdn
-电影谍战,http://live.metshop.top/huya/21059585?cdn=alicdn
-电影贺岁,http://live.metshop.top/huya/11601971?cdn=alicdn
-电影高分动作,http://live.metshop.top/huya/11352884?cdn=alicdn
 
 音乐频道,#genre#
 AMC音乐,https://AMChls.wns.live/hls/stream.m3u8
